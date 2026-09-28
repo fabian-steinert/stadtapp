@@ -1,0 +1,20 @@
+name: Deploy to Portainer
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Portainer webhook
+        run: |
+          curl --fail --show-error --silent \
+            --retry 3 --retry-delay 5 \
+            -X POST "https://portainer.oepgv.de/api/stacks/webhooks/0fc2e220-222d-4379-8cc2-935b7768facc"
