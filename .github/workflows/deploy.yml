@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/${{ github.repository }}:latest
 
 jobs:
   deploy:
@@ -23,34 +23,62 @@ jobs:
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository }}:latest
+          tags: ${{ env.IMAGE }}
 
-      - name: Create deployment compose
+      - name: Prepare Portainer compose
         run: |
-          mkdir -p deploy
+          sudo snap install yq
+          yq -i '
+            .services.app.image = strenv(IMAGE) |
+            del(.services.app.build)
+          ' docker-compose.yml
 
-          cat > deploy/docker-compose.yml <<EOF
-          services:
-            app:
-              image: ${{ env.REGISTRY }}/${{ github.repository }}:latest
-              ports:
-                - "\${PORT:-3000}:3000"
-          EOF
+          cat docker-compose.yml
 
-      - name: Show deployment compose
-        run: cat deploy/docker-compose.yml
-
-      - name: Deploy to Portainer
+      - name: Get current Portainer stack
+        env:
+          API_HOST: ${{ secrets.PORTAINER_API_HOST }}
+          API_KEY: ${{ secrets.PORTAINER_API_KEY }}
+          STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
         run: |
-          curl --fail --show-error --silent \
-            --retry 3 --retry-delay 5 \
-            -X POST "https://portainer.oepgv.de/api/stacks/webhooks/4b76a104-3122-453a-a520-74282b97f602"
+          curl --fail --silent \
+            "$API_HOST/api/stacks/$STACK_ID" \
+            -H "X-API-KEY: $API_KEY" \
+            > stack.json
+
+      - name: Update Portainer
+        env:
+          API_HOST: ${{ secrets.PORTAINER_API_HOST }}
+          API_KEY: ${{ secrets.PORTAINER_API_KEY }}
+          STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
+          ENDPOINT_ID: ${{ secrets.PORTAINER_ENDPOINT_ID }}
+        run: |
+          FILE=$(jq -Rs . < docker-compose.yml)
+          ENV=$(jq '.Env // []' stack.json)
+
+          jq -n \
+            --argjson file "$FILE" \
+            --argjson env "$ENV" \
+            --argjson id "$STACK_ID" \
+            '{
+              Env: $env,
+              id: $id,
+              Prune: false,
+              PullImage: true,
+              StackFileContent: $file
+            }' |
+          curl --fail --silent \
+            -X PUT \
+            "$API_HOST/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
+            -H "Content-Type: application/json" \
+            -H "X-API-KEY: $API_KEY" \
+            --data-binary @-
