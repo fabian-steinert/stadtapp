@@ -10,7 +10,6 @@ env:
 
 jobs:
   deploy:
-    name: Build, Push and Deploy
     runs-on: ubuntu-latest
 
     permissions:
@@ -18,11 +17,9 @@ jobs:
       packages: write
 
     steps:
-      # 1. Repository holen
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Bei GHCR anmelden
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -30,7 +27,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 3. Docker Image bauen und nach GHCR pushen
       - name: Build and push image
         uses: docker/build-push-action@v6
         with:
@@ -38,7 +34,21 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ github.repository }}:latest
 
-      # 4. Portainer Deployment auslösen
+      - name: Create deployment compose
+        run: |
+          mkdir -p deploy
+
+          cat > deploy/docker-compose.yml <<EOF
+          services:
+            app:
+              image: ${{ env.REGISTRY }}/${{ github.repository }}:latest
+              ports:
+                - "\${PORT:-3000}:3000"
+          EOF
+
+      - name: Show deployment compose
+        run: cat deploy/docker-compose.yml
+
       - name: Deploy to Portainer
         run: |
           curl --fail --show-error --silent \
