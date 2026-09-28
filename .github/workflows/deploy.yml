@@ -53,4 +53,4 @@ jobs:
         run: |
           curl --fail --show-error --silent \
             --retry 3 --retry-delay 5 \
-            -X POST "https://portainer.oepgv.de/api/stacks/webhooks/0fc2e220-222d-4379-8cc2-935b7768facc"
+            -X POST "https://portainer.oepgv.de/api/stacks/webhooks/4b76a104-3122-453a-a520-74282b97f602"
