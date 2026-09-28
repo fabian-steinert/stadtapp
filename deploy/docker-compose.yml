@@ -1,5 +1,1 @@
-services:
-  app:
-    image: ghcr.io/org/fabian-steinert-stadtapp:latest
-    ports:
-      - "${PORT:-3000}:3000"
+
