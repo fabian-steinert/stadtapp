@@ -50,7 +50,7 @@ jobs:
           API_KEY: ${{ secrets.PORTAINER_API_KEY }}
           STACK_ID: ${{ secrets.PORTAINER_STACK_ID }}
         run: |
-          curl --fail --silent \
+          curl --fail-with-body --show-error \
             "$API_HOST/api/stacks/$STACK_ID" \
             -H "X-API-KEY: $API_KEY" \
             > stack.json
@@ -76,7 +76,7 @@ jobs:
               PullImage: true,
               StackFileContent: $file
             }' |
-          curl --fail --silent \
+          curl --fail-with-body --show-error \
             -X PUT \
             "$API_HOST/api/stacks/$STACK_ID?endpointId=$ENDPOINT_ID" \
             -H "Content-Type: application/json" \
