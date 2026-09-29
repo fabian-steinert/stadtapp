@@ -4,6 +4,7 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const BUILD_VERSION = process.env.BUILD_VERSION || "unknown";
 const POIS_FILE = path.join(__dirname, "data", "pois.json");
 
 app.use(express.json());
@@ -26,7 +27,8 @@ function writePois(pois) {
 
 app.get("/", (req, res) => {
   res.render("index", {
-    title: "Karlsruhe StadtApp"
+    title: "Karlsruhe StadtApp",
+    buildVersion: BUILD_VERSION
   });
 });
 
