@@ -33,6 +33,8 @@ jobs:
           context: .
           push: true
           tags: ${{ env.IMAGE }}
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
 
       - name: Prepare Portainer compose
         run: |
