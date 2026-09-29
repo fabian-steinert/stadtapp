@@ -8,8 +8,7 @@ app.set("views", "./views");
 
 app.get("/", (req, res) => {
   res.render("index", {
-    title: "StadtApp",
-    message: "Hello World!"
+    title: "Karlsruhe StadtApp"
   });
 });
 
